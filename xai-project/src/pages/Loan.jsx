@@ -27,6 +27,8 @@ export default function Loan() {
 	});
 
 	const [prediction, setPrediction] = useState(null);
+	const [limePlot, setLimePlot] = useState(null);
+
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
 	const { theme } = useTheme();
@@ -41,6 +43,8 @@ export default function Loan() {
 		if (prediction !== null) {
 			setPrediction(null);
 		}
+		if (limePlot) {
+  setLimePlot(null);}
 		if (error) {
 			setError(null);
 		}
@@ -80,6 +84,8 @@ export default function Loan() {
 
 			const result = await response.json();
 			setPrediction(result.prediction);
+			setLimePlot(result.lime_plot);
+			
 		} catch (err) {
 			setError(
 				err.message ||
@@ -317,8 +323,42 @@ export default function Loan() {
 							</div>
 						</div>
 					)}
+					{limePlot && (
+  <div
+    className={`mt-10 p-6 rounded-2xl border ${
+      isDarkMode
+        ? "bg-gray-900 border-gray-700"
+        : "bg-white border-gray-300"
+    }`}
+  >
+    <h2
+      className={`text-2xl font-bold text-center mb-6 ${
+        isDarkMode ? "text-white" : "text-gray-800"
+      }`}
+    >
+      LIME Explanation – Why this loan was classified this way
+    </h2>
+
+    <img
+      src={`data:image/png;base64,${limePlot}`}
+      alt="LIME Explanation"
+      className="mx-auto rounded-lg shadow-lg max-w-full"
+    />
+
+    <p
+      className={`mt-4 text-sm text-center ${
+        isDarkMode ? "text-gray-400" : "text-gray-600"
+      }`}
+    >
+      This chart shows how each feature contributed positively or negatively
+      to the loan decision for this specific applicant.
+    </p>
+  </div>
+)}
+
 				</div>
 			</div>
 		</div>
 	);
 }
+

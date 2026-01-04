@@ -1,8 +1,17 @@
-from flask import Flask, request, render_template, jsonify
-from flask_cors import CORS
+from flask import Flask, request, render_template, jsonify #type:ignore
+from flask_cors import CORS #type:ignore
 import requests
-import joblib
-from dotenv import dotenv_values
+import joblib #type:ignore
+from dotenv import dotenv_values #type:ignore
+import numpy as np
+import tensorflow as tf #type:ignore
+from utils.shap_explainer import generate_shap_plot
+import pandas as pd #type:ignore
+import matplotlib.pyplot as plt
+from utils.shap_property import generate_property_shap_plot
+from utils.lime_loan import generate_loan_lime_plot
+
+
 
 config = dotenv_values(".env")
 
@@ -10,6 +19,13 @@ app = Flask(__name__)
 CORS(app)
 model1 = joblib.load("random_forest_model_property_value.joblib")
 model2 = joblib.load("logistic_regression_model.joblib")
+
+stock_model = tf.keras.models.load_model("model.keras")
+stock_scaler = joblib.load("scaler.pkl")
+X_train_loan = joblib.load("X_train_loan.pkl")
+
+print("Stock model and scaler loaded successfully")
+
 
 # Load scaler if it exists, otherwise create a dummy one
 try:
@@ -139,85 +155,144 @@ def test():
 
 
 @app.route('/predict_property', methods=['POST'])
-def predict():
+def predict_property():
     data = request.json
-    mapped_data = map_data(data)
-    print(mapped_data)
 
-    features = [
-        mapped_data['under_construction'],
-        mapped_data['rera'],
-        mapped_data['bhk'],
-        mapped_data['square_feet'],
-        mapped_data['ready_to_move'],
-        mapped_data['resale'],
-        mapped_data['longitude'],
-        mapped_data['latitude'],
-        mapped_data['city_tier'],
-        mapped_data['city_avg'],
-        mapped_data['builder'],
-        mapped_data['dealer'],
-        mapped_data['owner'],
+    # ---- HARD SAFETY CHECKS ----
+    required_fields = [
+        'under_construction', 'rera', 'bhk', 'square_feet',
+        'ready_to_move', 'resale',
+        'posted_by', 'locality', 'city'
     ]
 
-    prediction = model1.predict([features])
+    missing = [f for f in required_fields if f not in data]
+    if missing:
+        return jsonify({
+            "error": "Missing required fields",
+            "missing_fields": missing
+        }), 400
 
-    return jsonify({"prediction": prediction[0]})
+    mapped_data = map_data(data)
+
+    feature_names = [
+        'under_construction',
+        'rera',
+        'bhk',
+        'square_feet',
+        'ready_to_move',
+        'resale',
+        'longitude',
+        'latitude',
+        'city_tier',
+        'city_avg',
+        'builder',
+        'dealer',
+        'owner'
+    ]
+
+    features = [mapped_data[name] for name in feature_names]
+    input_array = np.array([features])
+
+    prediction = model1.predict([features])[0]
+    shap_image = generate_property_shap_plot(
+    model=model1,
+    input_array=input_array,
+    feature_names=feature_names
+)
+    return jsonify({
+        "prediction": float(prediction),
+        "shap_image": shap_image
+    })
+
 
 
 @app.route('/predict_loan', methods=['POST'])
 def predict_loan():
-    """
-    Predict loan default using Logistic Regression model.
-    
-    Expected features in order (15 features):
-    1. loan_amnt (Loan Amount)
-    2. term (Term)
-    3. int_rate (Interest Rate)
-    4. funded_amnt_inv (Funded Amount Investor)
-    5. dti (Debit to Income)
-    6. tot_coll_amnt (Total Collection Amount)
-    7. revol_bal (Revolving Balance)
-    8. collection_recovery_fee (Collection Recovery Fee)
-    9. revol_util (Revolving Utilities)
-    10. total_cur_bal (Total Current Balance)
-    11. last_week_pay (Last week Pay)
-    12. delinq_2yrs (Delinquency - two years)
-    13. inq_last_6mths (Inquires - six months)
-    14. open_acc (Open Account)
-    15. total_acc (Total Accounts)
-    """
     info = request.json
-    
-    # Map incoming request to the 15 features in the exact order the model expects
-    input_data = [
-        info.get('loan_amnt', 0),                    # 1. Loan Amount
-        info.get('term', 0),                          # 2. Term
-        info.get('int_rate', 0),                     # 3. Interest Rate
-        info.get('funded_amnt_inv', 0),              # 4. Funded Amount Investor
-        info.get('dti', 0),                          # 5. Debit to Income
-        info.get('tot_coll_amnt', 0),                # 6. Total Collection Amount
-        info.get('revol_bal', 0),                    # 7. Revolving Balance
-        info.get('collection_recovery_fee', 0),      # 8. Collection Recovery Fee
-        info.get('revol_util', 0),                   # 9. Revolving Utilities
-        info.get('total_cur_bal', 0),                # 10. Total Current Balance
-        info.get('last_week_pay', 0),               # 11. Last week Pay
-        info.get('delinq_2yrs', 0),                  # 12. Delinquency - two years
-        info.get('inq_last_6mths', 0),               # 13. Inquires - six months
-        info.get('open_acc', 0),                     # 14. Open Account
-        info.get('total_acc', 0)                     # 15. Total Accounts
+
+    feature_names = [
+        "loan_amnt",
+        "term",
+        "int_rate",
+        "funded_amnt_inv",
+        "dti",
+        "tot_coll_amnt",
+        "revol_bal",
+        "collection_recovery_fee",
+        "revol_util",
+        "total_cur_bal",
+        "last_week_pay",
+        "delinq_2yrs",
+        "inq_last_6mths",
+        "open_acc",
+        "total_acc"
     ]
-    
-    # Scale the input data if scaler is available
+
+    input_data = [
+        info.get(name, 0) for name in feature_names
+    ]
+
     if loan_scaler is not None:
-        input_data_scaled = loan_scaler.transform([input_data])
+        input_scaled = loan_scaler.transform([input_data])
     else:
-        input_data_scaled = [input_data]
-    
-    # Make prediction
-    prediction = model2.predict(input_data_scaled)
-    
-    return jsonify({"prediction": int(prediction[0])})
+        input_scaled = np.array([input_data])
+
+    prediction = model2.predict(input_scaled)[0]
+    confidence = model2.predict_proba(input_scaled)[0][1]
+
+    lime_image = generate_loan_lime_plot(
+        model=model2,
+        training_data=X_train_loan,   
+        input_array=input_scaled,
+        feature_names=feature_names
+    )
+
+    return jsonify({
+        "prediction": "Approved" if prediction == 1 else "Rejected",
+        "confidence": round(float(confidence), 3),
+        "lime_plot": lime_image
+    })
+
+
+@app.route('/predict_stock', methods=['POST'])
+def predict_stock():
+    data = request.json
+
+    features = [
+        data['open'],
+        data['high'],
+        data['low'],
+        data['volume'],
+        data['change'],
+        data['prev_price']
+    ]
+
+    feature_names = [
+        "Open",
+        "High",
+        "Low",
+        "Vol.(Millions)",
+        "Change",
+        "Prev_Price"
+    ]
+
+    X_scaled = stock_scaler.transform([features])
+    input_df = pd.DataFrame(X_scaled, columns=feature_names)
+ 
+    prediction = stock_model.predict(X_scaled)[0][0]
+
+    shap_image = generate_shap_plot(
+    stock_model,
+    input_df,
+    feature_names
+    )
+
+
+    return jsonify({
+        "prediction": round(float(prediction), 2),
+        "shap_plot": shap_image
+    })
+
 
 
 if __name__== '__main__':

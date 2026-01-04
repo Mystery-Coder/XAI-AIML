@@ -28,6 +28,7 @@ export default function Property() {
     });
 
     const [price, setPrice] = useState(null);
+    const [shapImage, setShapImage] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const { theme } = useTheme();
@@ -41,6 +42,7 @@ export default function Property() {
         if (price !== null) {
             setPrice(null);
         }
+        if (shapImage) setShapImage(null);
         if (error) {
             setError(null);
         }
@@ -83,6 +85,7 @@ export default function Property() {
 
             const result = await response.json();
             setPrice(result.prediction);
+            setShapImage(result.shap_image);
         } catch (err) {
             setError(err.message || "Failed to get prediction. Please check if the Flask server is running.");
             console.error("Error:", err);
@@ -446,7 +449,43 @@ export default function Property() {
                                 </p>
                             </div>
                         </div>
+                        
                     )}
+                    {shapImage && (
+    <div
+        className={`mt-8 p-6 rounded-2xl border ${
+            isDarkMode
+                ? "bg-gray-900 border-gray-700"
+                : "bg-white border-gray-300"
+        }`}
+    >
+        <h3
+            className={`text-2xl font-bold mb-4 text-center ${
+                isDarkMode ? "text-green-300" : "text-green-700"
+            }`}
+        >
+            SHAP Explanation – Feature Contribution
+        </h3>
+
+        <p
+            className={`text-center mb-6 ${
+                isDarkMode ? "text-gray-300" : "text-gray-600"
+            }`}
+        >
+            This plot explains how each feature contributed to the predicted
+            property value.
+        </p>
+
+        <div className="flex justify-center">
+            <img
+                src={`data:image/png;base64,${shapImage}`}
+                alt="SHAP Explanation"
+                className="max-w-full rounded-xl shadow-lg border"
+            />
+        </div>
+    </div>
+)}
+
                 </div>
             </div>
         </div>
