@@ -29,3 +29,5 @@ dist-ssr
 venv/
 node_modules/
 .ipynb_checkpoints/
+__pycache__/
+*.pyc

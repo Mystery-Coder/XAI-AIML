@@ -28,6 +28,8 @@ export default function Loan() {
 
 	const [prediction, setPrediction] = useState(null);
 	const [limePlot, setLimePlot] = useState(null);
+	const [limeWeights, setLimeWeights] = useState([]);
+
 
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
@@ -85,6 +87,7 @@ export default function Loan() {
 			const result = await response.json();
 			setPrediction(result.prediction);
 			setLimePlot(result.lime_plot);
+			setLimeWeights(result.lime_weights || []);
 			
 		} catch (err) {
 			setError(
@@ -355,6 +358,97 @@ export default function Loan() {
     </p>
   </div>
 )}
+{limeWeights.length > 0 && (
+  <div
+    className={`mt-6 p-6 rounded-2xl border ${
+      isDarkMode
+        ? "bg-gray-900 border-gray-700"
+        : "bg-white border-gray-300"
+    }`}
+  >
+    <h3
+      className={`text-2xl font-bold text-center mb-6 ${
+        isDarkMode ? "text-white" : "text-gray-800"
+      }`}
+    >
+       Feature Contributions (LIME)
+    </h3>
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr
+            className={`border-b-2 ${
+              isDarkMode ? "border-gray-700" : "border-gray-300"
+            }`}
+          >
+            <th
+              className={`px-6 py-4 text-left text-sm font-semibold ${
+                isDarkMode ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
+              Feature
+            </th>
+            <th
+              className={`px-6 py-4 text-center text-sm font-semibold ${
+                isDarkMode ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
+              Weight
+            </th>
+            <th
+              className={`px-6 py-4 text-center text-sm font-semibold ${
+                isDarkMode ? "text-gray-200" : "text-gray-700"
+              }`}
+            >
+              Effect
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {limeWeights.map((item, index) => (
+            <tr
+              key={index}
+              className={`border-b ${
+                isDarkMode
+                  ? "border-gray-800 hover:bg-gray-800/50"
+                  : "border-gray-200 hover:bg-gray-50"
+              } transition-colors`}
+            >
+              <td
+                className={`px-6 py-4 text-sm ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                {item.feature}
+              </td>
+              <td
+                className={`px-6 py-4 text-center text-sm font-mono ${
+                  isDarkMode ? "text-gray-300" : "text-gray-700"
+                }`}
+              >
+                {item.weight.toFixed(3)}
+              </td>
+              <td
+                className={`px-6 py-4 text-center text-sm font-semibold ${
+                  item.weight > 0
+                    ? isDarkMode
+                      ? "text-green-400"
+                      : "text-green-600"
+                    : isDarkMode
+                    ? "text-red-400"
+                    : "text-red-600"
+                }`}
+              >
+                {item.weight > 0 ? "Increases Approval" : "Increases Risk"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+)}
+
 
 				</div>
 			</div>

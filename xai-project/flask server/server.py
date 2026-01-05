@@ -240,7 +240,7 @@ def predict_loan():
     prediction = model2.predict(input_scaled)[0]
     confidence = model2.predict_proba(input_scaled)[0][1]
 
-    lime_image = generate_loan_lime_plot(
+    lime_image, lime_weights = generate_loan_lime_plot(
         model=model2,
         training_data=X_train_loan,   
         input_array=input_scaled,
@@ -250,7 +250,8 @@ def predict_loan():
     return jsonify({
         "prediction": "Approved" if prediction == 1 else "Rejected",
         "confidence": round(float(confidence), 3),
-        "lime_plot": lime_image
+        "lime_plot": lime_image,
+        "lime_weights": lime_weights
     })
 
 

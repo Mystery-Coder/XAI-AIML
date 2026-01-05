@@ -42,5 +42,10 @@ def generate_loan_lime_plot(
     lime_image = base64.b64encode(buffer.read()).decode("utf-8")
     buffer.close()
     plt.close(fig)
+    
+    lime_weights = [
+        {"feature": f, "weight": float(w)}
+        for f, w in explanation.as_list(label=1)
+    ]
 
-    return lime_image
+    return lime_image, lime_weights
