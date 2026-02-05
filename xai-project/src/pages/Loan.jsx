@@ -9,27 +9,26 @@ const url = "http://127.0.0.1:5000/predict_loan";
 
 export default function Loan() {
 	const [formData, setFormData] = useState({
-		loan_amnt: "",
-		term: "",
-		int_rate: "",
-		funded_amnt_inv: "",
-		dti: "",
-		tot_coll_amnt: "",
-		revol_bal: "",
-		collection_recovery_fee: "",
-		revol_util: "",
-		total_cur_bal: "",
-		last_week_pay: "",
-		delinq_2yrs: "",
-		inq_last_6mths: "",
-		open_acc: "",
-		total_acc: "",
+		loan_amnt: "50000",
+		term: "36",
+		int_rate: "7.5",
+		funded_amnt_inv: "45000",
+		dti: "15.5",
+		tot_coll_amnt: "0",
+		revol_bal: "5000",
+		collection_recovery_fee: "0",
+		revol_util: "45.2",
+		total_cur_bal: "100000",
+		last_week_pay: "50",
+		delinq_2yrs: "0",
+		inq_last_6mths: "2",
+		open_acc: "10",
+		total_acc: "15",
 	});
 
 	const [prediction, setPrediction] = useState(null);
 	const [limePlot, setLimePlot] = useState(null);
 	const [limeWeights, setLimeWeights] = useState([]);
-
 
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
@@ -46,7 +45,8 @@ export default function Loan() {
 			setPrediction(null);
 		}
 		if (limePlot) {
-  setLimePlot(null);}
+			setLimePlot(null);
+		}
 		if (error) {
 			setError(null);
 		}
@@ -63,7 +63,7 @@ export default function Loan() {
 			const value = parseFloat(formData[key]);
 			if (isNaN(value) || formData[key] === "") {
 				setError(
-					`Please enter a valid number for ${key.replace(/_/g, " ")}`
+					`Please enter a valid number for ${key.replace(/_/g, " ")}`,
 				);
 				setLoading(false);
 				return;
@@ -88,11 +88,10 @@ export default function Loan() {
 			setPrediction(result.prediction);
 			setLimePlot(result.lime_plot);
 			setLimeWeights(result.lime_weights || []);
-			
 		} catch (err) {
 			setError(
 				err.message ||
-					"Failed to get prediction. Please check if the Flask server is running."
+					"Failed to get prediction. Please check if the Flask server is running.",
 			);
 			console.error("Error:", err);
 		} finally {
@@ -257,8 +256,8 @@ export default function Loan() {
 										? "bg-gradient-to-br from-green-900/30 to-emerald-900/30 border-green-700"
 										: "bg-gradient-to-br from-green-50 to-emerald-50 border-green-300"
 									: isDarkMode
-									? "bg-gradient-to-br from-red-900/30 to-rose-900/30 border-red-700"
-									: "bg-gradient-to-br from-red-50 to-rose-50 border-red-300"
+										? "bg-gradient-to-br from-red-900/30 to-rose-900/30 border-red-700"
+										: "bg-gradient-to-br from-red-50 to-rose-50 border-red-300"
 							}`}
 						>
 							<div className="text-center">
@@ -327,132 +326,147 @@ export default function Loan() {
 						</div>
 					)}
 					{limePlot && (
-  <div
-    className={`mt-10 p-6 rounded-2xl border ${
-      isDarkMode
-        ? "bg-gray-900 border-gray-700"
-        : "bg-white border-gray-300"
-    }`}
-  >
-    <h2
-      className={`text-2xl font-bold text-center mb-6 ${
-        isDarkMode ? "text-white" : "text-gray-800"
-      }`}
-    >
-      LIME Explanation – Why this loan was classified this way
-    </h2>
+						<div
+							className={`mt-10 p-6 rounded-2xl border ${
+								isDarkMode
+									? "bg-gray-900 border-gray-700"
+									: "bg-white border-gray-300"
+							}`}
+						>
+							<h2
+								className={`text-2xl font-bold text-center mb-6 ${
+									isDarkMode ? "text-white" : "text-gray-800"
+								}`}
+							>
+								LIME Explanation – Why this loan was classified
+								this way
+							</h2>
 
-    <img
-      src={`data:image/png;base64,${limePlot}`}
-      alt="LIME Explanation"
-      className="mx-auto rounded-lg shadow-lg max-w-full"
-    />
+							<img
+								src={`data:image/png;base64,${limePlot}`}
+								alt="LIME Explanation"
+								className="mx-auto rounded-lg shadow-lg max-w-full"
+							/>
 
-    <p
-      className={`mt-4 text-sm text-center ${
-        isDarkMode ? "text-gray-400" : "text-gray-600"
-      }`}
-    >
-      This chart shows how each feature contributed positively or negatively
-      to the loan decision for this specific applicant.
-    </p>
-  </div>
-)}
-{limeWeights.length > 0 && (
-  <div
-    className={`mt-6 p-6 rounded-2xl border ${
-      isDarkMode
-        ? "bg-gray-900 border-gray-700"
-        : "bg-white border-gray-300"
-    }`}
-  >
-    <h3
-      className={`text-2xl font-bold text-center mb-6 ${
-        isDarkMode ? "text-white" : "text-gray-800"
-      }`}
-    >
-       Feature Contributions (LIME)
-    </h3>
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr
-            className={`border-b-2 ${
-              isDarkMode ? "border-gray-700" : "border-gray-300"
-            }`}
-          >
-            <th
-              className={`px-6 py-4 text-left text-sm font-semibold ${
-                isDarkMode ? "text-gray-200" : "text-gray-700"
-              }`}
-            >
-              Feature
-            </th>
-            <th
-              className={`px-6 py-4 text-center text-sm font-semibold ${
-                isDarkMode ? "text-gray-200" : "text-gray-700"
-              }`}
-            >
-              Weight
-            </th>
-            <th
-              className={`px-6 py-4 text-center text-sm font-semibold ${
-                isDarkMode ? "text-gray-200" : "text-gray-700"
-              }`}
-            >
-              Effect
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {limeWeights.map((item, index) => (
-            <tr
-              key={index}
-              className={`border-b ${
-                isDarkMode
-                  ? "border-gray-800 hover:bg-gray-800/50"
-                  : "border-gray-200 hover:bg-gray-50"
-              } transition-colors`}
-            >
-              <td
-                className={`px-6 py-4 text-sm ${
-                  isDarkMode ? "text-gray-300" : "text-gray-700"
-                }`}
-              >
-                {item.feature}
-              </td>
-              <td
-                className={`px-6 py-4 text-center text-sm font-mono ${
-                  isDarkMode ? "text-gray-300" : "text-gray-700"
-                }`}
-              >
-                {item.weight.toFixed(3)}
-              </td>
-              <td
-                className={`px-6 py-4 text-center text-sm font-semibold ${
-                  item.weight > 0
-                    ? isDarkMode
-                      ? "text-green-400"
-                      : "text-green-600"
-                    : isDarkMode
-                    ? "text-red-400"
-                    : "text-red-600"
-                }`}
-              >
-                {item.weight > 0 ? "Increases Approval" : "Increases Risk"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-)}
-
-
+							<p
+								className={`mt-4 text-sm text-center ${
+									isDarkMode
+										? "text-gray-400"
+										: "text-gray-600"
+								}`}
+							>
+								This chart shows how each feature contributed
+								positively or negatively to the loan decision
+								for this specific applicant.
+							</p>
+						</div>
+					)}
+					{limeWeights.length > 0 && (
+						<div
+							className={`mt-6 p-6 rounded-2xl border ${
+								isDarkMode
+									? "bg-gray-900 border-gray-700"
+									: "bg-white border-gray-300"
+							}`}
+						>
+							<h3
+								className={`text-2xl font-bold text-center mb-6 ${
+									isDarkMode ? "text-white" : "text-gray-800"
+								}`}
+							>
+								Feature Contributions (LIME)
+							</h3>
+							<div className="overflow-x-auto">
+								<table className="w-full">
+									<thead>
+										<tr
+											className={`border-b-2 ${
+												isDarkMode
+													? "border-gray-700"
+													: "border-gray-300"
+											}`}
+										>
+											<th
+												className={`px-6 py-4 text-left text-sm font-semibold ${
+													isDarkMode
+														? "text-gray-200"
+														: "text-gray-700"
+												}`}
+											>
+												Feature
+											</th>
+											<th
+												className={`px-6 py-4 text-center text-sm font-semibold ${
+													isDarkMode
+														? "text-gray-200"
+														: "text-gray-700"
+												}`}
+											>
+												Weight
+											</th>
+											<th
+												className={`px-6 py-4 text-center text-sm font-semibold ${
+													isDarkMode
+														? "text-gray-200"
+														: "text-gray-700"
+												}`}
+											>
+												Effect
+											</th>
+										</tr>
+									</thead>
+									<tbody>
+										{limeWeights.map((item, index) => (
+											<tr
+												key={index}
+												className={`border-b ${
+													isDarkMode
+														? "border-gray-800 hover:bg-gray-800/50"
+														: "border-gray-200 hover:bg-gray-50"
+												} transition-colors`}
+											>
+												<td
+													className={`px-6 py-4 text-sm ${
+														isDarkMode
+															? "text-gray-300"
+															: "text-gray-700"
+													}`}
+												>
+													{item.feature}
+												</td>
+												<td
+													className={`px-6 py-4 text-center text-sm font-mono ${
+														isDarkMode
+															? "text-gray-300"
+															: "text-gray-700"
+													}`}
+												>
+													{item.weight.toFixed(3)}
+												</td>
+												<td
+													className={`px-6 py-4 text-center text-sm font-semibold ${
+														item.weight > 0
+															? isDarkMode
+																? "text-green-400"
+																: "text-green-600"
+															: isDarkMode
+																? "text-red-400"
+																: "text-red-600"
+													}`}
+												>
+													{item.weight > 0
+														? "Increases Approval"
+														: "Increases Risk"}
+												</td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					)}
 				</div>
 			</div>
 		</div>
 	);
 }
-

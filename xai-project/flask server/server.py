@@ -1,12 +1,12 @@
-from flask import Flask, request, render_template, jsonify #type:ignore
-from flask_cors import CORS #type:ignore
+from flask import Flask, request, jsonify 
+from flask_cors import CORS 
 import requests
-import joblib #type:ignore
-from dotenv import dotenv_values #type:ignore
+import joblib 
+from dotenv import dotenv_values 
 import numpy as np
-import tensorflow as tf #type:ignore
+import tensorflow as tf 
 from utils.shap_explainer import generate_shap_plot
-import pandas as pd #type:ignore
+import pandas as pd 
 import matplotlib.pyplot as plt
 from utils.shap_property import generate_property_shap_plot
 from utils.lime_loan import generate_loan_lime_plot
